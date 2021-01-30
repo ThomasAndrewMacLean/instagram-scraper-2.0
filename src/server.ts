@@ -38,7 +38,7 @@ app.get("/", async (req: Request, res: Response) => {
     // START PUPPETEER
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
     await page.setUserAgent(
@@ -53,7 +53,9 @@ app.get("/", async (req: Request, res: Response) => {
     await page.goto("https://www.instagram.com/accounts/login/");
 
     const [accept] = await page.$x('//button[contains(.,"Accept")]');
-    await accept.click({ delay: 30 });
+    if (accept) {
+      await accept.click({ delay: 30 });
+    }
     await page.waitFor("input[name=username]", { visible: true });
     await delay(100);
     await page.type("input[name=username]", user.username, {
