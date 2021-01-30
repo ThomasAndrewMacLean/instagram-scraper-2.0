@@ -23,9 +23,9 @@ jobs:
         with:
           node-version: "10.x"
       - name: Install dependencies
-        run: yarn
+        run: npm install
       - name: Build
-        run: yarn build
+        run: npm run build
       - name: Setup GCloud
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
