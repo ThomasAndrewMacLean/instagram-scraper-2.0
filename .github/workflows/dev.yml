@@ -1,0 +1,50 @@
+# This is a basic workflow to help you get started with Actions
+name: CI DEV
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+jobs:
+  setup-build-deploy:
+    name: Setup, Build, and Deploy
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: ${{ secrets.RUN_PROJECT }}
+      RUN_REGION: ${{ secrets.RUN_REGION }}
+      SERVICE_NAME: biosil-commerce-backend-dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup NodeJS
+        uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - name: Install dependencies
+        run:  yarn
+      - name: Build
+        run: yarn build
+      - name: Setup GCloud
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: "286.0.0"
+          service_account_email: ${{ secrets.RUN_SA_EMAIL }}
+          service_account_key: ${{ secrets.GCLOUD_AUTH }}
+          project_id: ${{ secrets.RUN_PROJECT }}
+      - name: Build Docker Image
+        run: docker build . -t "eu.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
+      - name: Authenticate for gcr
+        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://eu.gcr.io/$PROJECT_ID
+      - name: Push Docker Image to gcr
+        run: docker push eu.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+      - name: Deploy
+        run: |-
+          gcloud run deploy $SERVICE_NAME \
+            --quiet \
+            --region $RUN_REGION \
+            --image eu.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
+            --platform managed \
+            --allow-unauthenticated
