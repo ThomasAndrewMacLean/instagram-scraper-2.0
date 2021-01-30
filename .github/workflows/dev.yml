@@ -12,9 +12,9 @@ jobs:
     name: Setup, Build, and Deploy
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: ${{ secrets.RUN_PROJECT }}
-      RUN_REGION: ${{ secrets.RUN_REGION }}
-      SERVICE_NAME: biosil-commerce-backend-dev
+      PROJECT_ID: thomasmaclean
+      RUN_REGION: europe-west1
+      SERVICE_NAME: instagram-scraper
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
           version: "286.0.0"
           service_account_email: ${{ secrets.RUN_SA_EMAIL }}
           service_account_key: ${{ secrets.GCLOUD_AUTH }}
-          project_id: ${{ secrets.RUN_PROJECT }}
+          project_id: thomasmaclean
       - name: Build Docker Image
         run: docker build . -t "eu.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
       - name: Authenticate for gcr
