@@ -24,9 +24,18 @@ const user = {
 };
 // ROUTES 🛣
 app.get("/", async (req: Request, res: Response) => {
-  const instagramURL = "https://www.instagram.com/franssiss/";
+  const instagramURL = "https://www.instagram.com/";
   let links;
   try {
+    // GET PROFILES
+    const profilesRaw = await base("profiles").select().all();
+
+    const profiles = profilesRaw
+      .map((x) => x.fields)
+      .map((x: { Name?: string }) => x.Name)
+      .filter((x) => x);
+
+    // START PUPPETEER
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.setUserAgent(
@@ -37,6 +46,7 @@ app.get("/", async (req: Request, res: Response) => {
       "Accept-Language": "en-US,en;q=0.9",
     });
 
+    // LOGIN INSTAGRAM
     await page.goto("https://www.instagram.com/accounts/login/");
 
     const [accept] = await page.$x('//button[contains(.,"Accept")]');
@@ -57,38 +67,45 @@ app.get("/", async (req: Request, res: Response) => {
 
     await delay(5000);
 
-    await page.goto(instagramURL);
+    // GO TO PROFILE PAGES
+    for (let index = 0; index < profiles.length; index++) {
+      const profile = profiles[index];
 
-    links = await page.evaluate(() => {
-      return Array.from(
-        document.querySelectorAll("main article a div img")
-      ).map((anchor: HTMLImageElement) => anchor.src);
-    });
+      await page.goto(instagramURL + profile);
 
-    await browser.close();
+      links = await page.evaluate(() => {
+        return Array.from(
+          document.querySelectorAll("main article a div img")
+        ).map((anchor: HTMLImageElement) => anchor.src);
+      });
 
-    links.forEach(async (linkie) => {
-      if (!linkie.includes("www.instagram.com")) {
-        const results = await base("Table 1")
-          .select({
-            filterByFormula: `{ImageUrlWithoutParams} = "${removeParams(
-              linkie
-            )}"`,
-          })
-          .all();
-        if (!results.length) {
-          await base("Table 1").create([
-            {
-              fields: {
-                Name: instagramURL,
-                ImageUrl: linkie,
-                ImageUrlWithoutParams: removeParams(linkie),
+      // SAVE TO DB
+      links.forEach(async (linkie) => {
+        if (!linkie.includes("www.instagram.com")) {
+          const results = await base("instagramz")
+            .select({
+              filterByFormula: `{ImageUrlWithoutParams} = "${removeParams(
+                linkie
+              )}"`,
+            })
+            .all();
+          if (!results.length) {
+            await base("instagramz").create([
+              {
+                fields: {
+                  Name: profile,
+                  Images: [{ url: linkie }],
+                  ImageUrlWithoutParams: removeParams(linkie),
+                },
               },
-            },
-          ]);
+            ]);
+          }
         }
-      }
-    });
+      });
+    }
+
+    //CLOSE BROWSER
+    await browser.close();
   } catch (error) {
     console.error(error);
     return res.json({ error });
