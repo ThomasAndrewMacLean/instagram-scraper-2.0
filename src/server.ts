@@ -84,6 +84,7 @@ app.get("/", async (req: Request, res: Response) => {
         ).map((anchor: HTMLImageElement) => anchor.src);
       });
 
+      console.log(links);
       // SAVE TO DB
       links.forEach(async (linkie) => {
         if (!linkie.includes("www.instagram.com")) {
