@@ -50,26 +50,28 @@ app.get("/", async (req: Request, res: Response) => {
     });
 
     // LOGIN INSTAGRAM
-    await page.goto("https://www.instagram.com/accounts/login/");
+    const loginUrl = "https://www.instagram.com/accounts/login/";
+    await page.goto(loginUrl);
 
-    const [accept] = await page.$x('//button[contains(.,"Accept")]');
-    if (accept) {
-      await accept.click({ delay: 30 });
+    if (page.url() === loginUrl) {
+      const [accept] = await page.$x('//button[contains(.,"Accept")]');
+      if (accept) {
+        await accept.click({ delay: 30 });
+      }
+      await page.waitFor("input[name=username]", { visible: true });
+      await delay(100);
+      await page.type("input[name=username]", user.username, {
+        delay: 50,
+      });
+
+      await delay(100);
+      await page.type("input[name=password]", user.password, { delay: 50 });
+
+      await delay(100);
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Enter");
     }
-    await page.waitFor("input[name=username]", { visible: true });
-    await delay(100);
-    await page.type("input[name=username]", user.username, {
-      delay: 50,
-    });
-
-    await delay(100);
-    await page.type("input[name=password]", user.password, { delay: 50 });
-
-    await delay(100);
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Enter");
-
     await delay(5000);
 
     // GO TO PROFILE PAGES
