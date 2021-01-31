@@ -37,7 +37,7 @@ app.get("/", async (req: Request, res: Response) => {
 
     // START PUPPETEER
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
@@ -120,6 +120,16 @@ app.get("/", async (req: Request, res: Response) => {
   }
 
   res.json(links);
+});
+
+app.get("/pictures/:user", async (req: Request, res: Response) => {
+  const user = req.params.user;
+  const results = await base("instagramz")
+    .select({
+      filterByFormula: `{Name} = "${user}"`,
+    })
+    .all();
+  res.json({ user, results: (results || []).map((x) => x.fields) });
 });
 
 app.get("/test", async (req: Request, res: Response) => {
